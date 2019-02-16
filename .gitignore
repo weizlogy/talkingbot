@@ -35,4 +35,7 @@ vignettes/*.pdf
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
 
+# Sensitive data
 twitter_info.csv
+# Installed packages
+packages/*
