@@ -31,4 +31,4 @@ token <- create_token(
 # Running server
 #  -> https://www.rplumber.io/
 r <- plumb('plumber.R')
-r$run(port=8000)
+r$run(host="0.0.0.0", port=8000)
