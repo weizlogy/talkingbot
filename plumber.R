@@ -75,7 +75,7 @@ get_my_tweets_terms <- function() {
 }
 
 search_tweets_by_query <- function(query) {
-  return(normalize_tweet(search_tweets(q = query, n = 100, lang = "ja")))
+  return(normalize_tweet(search_tweets(q = query, n = 100, include_rts = F, lang = "ja")))
 }
 
 normalize_tweet <- function(tweets1) {
