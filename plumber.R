@@ -2,33 +2,10 @@
 #* @param n number of chains
 #* @param r random chains
 #* @param p post tweet
-#* @post /predict
-function(n = 5, r = F, p = F) {
-  terms <- get_my_tweets_terms()
-
-  fit <- markovchainFit(data = terms)
-
-  if (as.logical(r)) {
-    n <- sample(3:n, 1)
-  }
-
-  text <- paste(predict(object = fit$estimate, newdata = terms, n.ahead = as.numeric(n)), collapse = "")
-  text <- paste(text, str_interp("(AP${n}"))
-
-  if (as.logical(p)) {
-    post_tweet(status = text)
-  }
-
-  paste0(text)
-}
-
-#* 
-#* @param n number of chains
-#* @param r random chains
-#* @param p post tweet
+#* @param m max tweet samples
 #* @post /mcmc
-function(n = 5, r = F, p = F) {
-  terms <- get_my_tweets_terms()
+function(n = 5, r = F, p = F, m = 1000) {
+  terms <- get_my_tweets_terms(m)
 
   fit <- markovchainFit(data = terms)
 
@@ -37,7 +14,8 @@ function(n = 5, r = F, p = F) {
   }
 
   text <- paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "")
-  text <- paste(text, str_interp("(AM${n}"))
+
+  text <- after_adjusting_text(text)
 
   if (as.logical(p)) {
     post_tweet(status = text)
@@ -63,6 +41,8 @@ function(n = 10, r = F, p = F, t = "") {
 
   text <- paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "")
 
+  text <- after_adjusting_text(text)
+
   if (as.logical(p)) {
     post_tweet(status = str_interp("@tos ${t} >> ${text}"))
   }
@@ -70,31 +50,34 @@ function(n = 10, r = F, p = F, t = "") {
   paste0(text)
 }
 
-get_my_tweets_terms <- function() {
-  return(normalize_tweet(get_timeline('twilightalpaca', n = 1000)))
+get_my_tweets_terms <- function(max = 1000) {
+  return(normalize_tweet(get_timeline('twilightalpaca', n = as.numeric(max))))
 }
 
 search_tweets_by_query <- function(query) {
   return(normalize_tweet(search_tweets(q = query, n = 100, include_rts = F, lang = "ja")))
 }
 
-normalize_tweet <- function(tweets1) {
-  tweets <- dplyr::filter(
-    tweets1, is.na(retweet_status_id) & is.na(reply_to_status_id) & !str_detect(text, "\\(A[P|M]"))
+normalize_tweet <- function(raw) {
+  raw_filtered <- dplyr::filter(
+    raw, is.na(retweet_status_id) & is.na(reply_to_status_id) & !str_detect(source, "Talking with Alpaca"))
 
-  # tweetのテキスト抽出 > 要らない文字を消す > tibble形式 > dataframe形式 > めかぶ
-  # 正規表現で除外
-  #   半角カナ, パンクチュエーション, 全角記号, あるぱか, URL, ハッシュタグ, アカウント
-  test <- tweets$text %>%
-    str_replace_all("[ｦ-ﾟ]|[[:punct:]]|[︰-＠]|[ξ.+?Ҙ]|(https?://t.co/[[:alnum:]]+)|(#.+? )||(@[[:alnum:]]+)", "") %>%
-    enframe(name = NULL, value = "text") %>%
-    as.data.frame %>% RMeCabDF %>% unlist %>% data.frame(., names(.))
+  # URLと@だけ消す。ほかの不要文字は後で調整
+  filtered_modifier <- dplyr::mutate(raw_filtered, text = purrr::map(
+    text, ~ { str_replace_all(.x, "(https?://t.co/[[:alnum:]]+)|@", "") }))
 
-  colnames(test) <- c("Morph", "POS")
+  filtered_modifier$text %>% head()
 
-  test <- dplyr::filter(test, POS != "記号")
+  ngram3 <- docDF(filtered_modifier, type = 1, N = 3, nDF = 1, column = "text")
 
-  terms <- c(t(test["Morph"]))
+  ngram3_modifier <- dplyr::select(ngram3, starts_with("N"))
 
-  return(terms)
+  return(ngram3_modifier)
+}
+
+after_adjusting_text <- function(text) {
+  newtext <- gsub("\\n", " -> ", text, fixed = T)
+  newtext <- gsub('"', "", newtext, fixed = T)
+  newtext <- gsub("#", "♯", newtext, fixed = T)
+  return(newtext)
 }
