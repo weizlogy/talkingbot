@@ -65,10 +65,11 @@ normalize_tweet <- function(raw) {
   # URLと@だけ消す。ほかの不要文字は後で調整
   filtered_modifier <- dplyr::mutate(raw_filtered, text = purrr::map(
     text, ~ { str_replace_all(.x, "(https?://t.co/[[:alnum:]]+)|@", "") }))
+  
+  # text抽出(list) からの改行分割してデータフレームに戻す
+  text <- filtered_modifier$text %>% str_split(pattern = "\n") %>% unlist %>% enframe(name = "name", value = "text")
 
-  filtered_modifier$text %>% head()
-
-  ngram3 <- docDF(filtered_modifier, type = 1, N = 3, nDF = 1, column = "text")
+  ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text")
 
   ngram3_modifier <- dplyr::select(ngram3, starts_with("N"))
 
@@ -76,7 +77,7 @@ normalize_tweet <- function(raw) {
 }
 
 after_adjusting_text <- function(text) {
-  newtext <- gsub("\\n", " -> ", text, fixed = T)
+  newtext <- gsub(",", " ", text, fixed = T)
   newtext <- gsub('"', "", newtext, fixed = T)
   newtext <- gsub("#", "♯", newtext, fixed = T)
   return(newtext)
