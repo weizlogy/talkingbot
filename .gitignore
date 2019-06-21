@@ -37,5 +37,6 @@ rsconnect/
 
 # Sensitive data
 twitter_info.csv
+a3rt_info.csv
 # Installed packages
 packages/*
