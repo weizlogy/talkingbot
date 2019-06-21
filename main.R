@@ -5,7 +5,7 @@
 .libPaths(c(.libPaths(), "./packages"))
 
 for (package in c('plumber', 'rtweet', 'tidytext', 'stringr', 'tibble', 'dplyr', 'markovchain', 'httr', 'jsonlite')) {
-  if (!require(package, character.only = T, lib = './packages')) {
+  if (!require(package, character.only = T, lib = './packages', warn.conflicts = F)) {
     install.packages(package, lib = './packages')
     library(package, character.only = T, lib = './packages')
   }
@@ -15,6 +15,9 @@ if (!require("RMeCab", lib = './packages')) {
   install.packages("RMeCab", repos = "http://rmecab.jp/R", type = "source", lib = './packages')
   library("RMeCab")
 }
+
+# Loading self definitions.
+source("./textextractor.R")
 
 # reading twitter access information
 twitter_info <- read.csv("./twitter_info.csv", header = F, stringsAsFactors = F)
