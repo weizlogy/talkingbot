@@ -13,9 +13,10 @@ function(n = 5, r = F, p = F, m = 1000) {
     n <- sample(3:n, 1)
   }
 
-  text <- paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "")
-
-  text <- after_adjusting_text(text)
+  text <-
+    paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "") %>%
+    after_adjusting_text %>%
+    proofreading
 
   if (as.logical(p)) {
     post_tweet(status = text)
@@ -39,9 +40,10 @@ function(n = 10, r = F, p = F, t = "") {
     n <- sample(5:n, 1)
   }
 
-  text <- paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "")
-
-  text <- after_adjusting_text(text)
+  text <-
+    paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "") %>%
+    after_adjusting_text %>%
+    proofreading
 
   if (as.logical(p)) {
     post_tweet(status = str_interp("@tos ${t} >> ${text}"))
@@ -69,7 +71,7 @@ normalize_tweet <- function(raw) {
   # text抽出(list) からの改行分割してデータフレームに戻す
   text <- filtered_modifier$text %>% str_split(pattern = "\n") %>% unlist %>% enframe(name = "name", value = "text")
 
-  ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text")
+  ngram3 <- docDF(text, type = 1, N = 2, nDF = 1, column = "text")
 
   ngram3_modifier <- dplyr::select(ngram3, starts_with("N"))
 
@@ -81,4 +83,31 @@ after_adjusting_text <- function(text) {
   newtext <- gsub('"', "", newtext, fixed = T)
   newtext <- gsub("#", "♯", newtext, fixed = T)
   return(newtext)
+}
+
+proofreading <- function(text) {
+  a3rt_pf_ep <- paste(a3rt_pf_ep, '&sentence=', text, sep="") %>% URLencode
+  a3rt_body <- GET(a3rt_pf_ep) %>% content('text') %>% fromJSON(flatten = T)
+
+  sentence <- a3rt_body['inputSentence']$inputSentence
+
+  print(sentence)
+
+  if (a3rt_body['status']$status == 1) {
+    f <- function(x) {
+      # filterでデータ行が全部消えると落ちるので(こんなデータになる)
+      # [1] alerts.pos         alerts.word        alerts.score       alerts.suggestions
+      # <0 rows> (or 0-length row.names)
+      if (x[1] == F || x$alerts.word == "♯") {
+        return()
+      }
+      str_sub(sentence, start = x$alerts.pos + 1, end = x$alerts.pos + 1) <- x$alerts.suggestions[1]
+      sentence <<- sentence
+    }
+    a3rt_body['alerts'] %>% as.data.frame %>%
+      dplyr::filter(alerts.score > 0.9) %>% dplyr::arrange(alerts.score) %>% apply(1, f)
+
+    print(sentence)
+  }
+  return(sentence)
 }
