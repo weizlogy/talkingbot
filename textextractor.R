@@ -10,18 +10,18 @@ search_tweets_by_query <- function(query) {
 
 normalize_tweet <- function(raw) {
   raw_filtered <- dplyr::filter(
-    raw, is.na(retweet_status_id) & is.na(reply_to_status_id) & !str_detect(source, "Talking with Alpaca"))
+    raw, is.na(retweet_status_id) & !str_detect(source, "Talking with Alpaca"))
 
   # URLと@だけ消す。ほかの不要文字は後で調整
   filtered_modifier <-
     dplyr::mutate(raw_filtered, text = purrr::map(text, ~ {
-      str_replace_all(.x, "(https?://t.co/[[:alnum:]]+)|@", "")
+      str_replace_all(.x, "(https?://t.co/[[:alnum:]]+)|@.+? ", "")
     }))
   
   # text抽出(list) からの改行分割してデータフレームに戻す
   text <- filtered_modifier$text %>% str_split(pattern = "\n") %>% unlist %>% enframe(name = "name", value = "text")
   
-  ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text")
+  ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text", Genkei = 1)
 
   ngram3_modifier <- dplyr::select(ngram3, N2, N3)
 
