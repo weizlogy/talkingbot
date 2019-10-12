@@ -14,7 +14,7 @@ function(n = 5, r = F, p = F, m = 1000) {
   }
 
   text <-
-    paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = T), collapse = "") %>%
+    paste(markovchainSequence(n = as.numeric(n), markovchain=fit$estimate, include.t0 = F, t0 = "BOS"), collapse = "") %>%
     after_adjusting_text %>%
     proofreading
 

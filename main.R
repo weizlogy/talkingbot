@@ -16,6 +16,8 @@ if (!require("RMeCab", lib = './packages')) {
   library("RMeCab")
 }
 
+# update.packages(ask = F)
+
 # Loading self definitions.
 source("./textextractor.R")
 
@@ -34,7 +36,7 @@ token <- create_token(
 a3rt_info <- read.csv("./a3rt_info.csv", header = F, stringsAsFactors = F)
 
 # create ProfreadingAPI endpoint
-a3rt_pf_ep <- paste('https://api.a3rt.recruit-tech.co.jp/proofreading/v2/typo?', 'apikey=', a3rt_info[1, 1], '&sensitivity=high', sep="")
+a3rt_pf_ep <- paste('https://api.a3rt.recruit-tech.co.jp/proofreading/v2/typo?', 'apikey=', a3rt_info[1, 1], '&sensitivity=low', sep="")
 
 # Running server
 #  -> https://www.rplumber.io/

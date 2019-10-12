@@ -5,7 +5,7 @@ get_my_tweets_terms <- function(max = 1000) {
 }
 
 search_tweets_by_query <- function(query) {
-  return(normalize_tweet(search_tweets(q = query, n = 100, include_rts = F, lang = "ja")))
+  return(normalize_tweet(search_tweets(q = query, n = 50, include_rts = F, lang = "ja")))
 }
 
 normalize_tweet <- function(raw) {
@@ -19,9 +19,11 @@ normalize_tweet <- function(raw) {
     }))
   
   # text抽出(list) からの改行分割してデータフレームに戻す
-  text <- filtered_modifier$text %>% str_split(pattern = "\n") %>% unlist %>% enframe(name = "name", value = "text")
+  text <- filtered_modifier$text %>% str_split(pattern = "\n") %>% unlist %>% paste("BOS", .) %>% enframe(name = "name", value = "text")
   
   ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text", Genkei = 1)
+
+  print(head(text))
 
   ngram3_modifier <- dplyr::select(ngram3, N2, N3)
 
