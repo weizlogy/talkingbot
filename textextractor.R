@@ -23,7 +23,7 @@ normalize_tweet <- function(raw) {
   
   ngram3 <- docDF(text, type = 1, N = 3, nDF = 1, column = "text", Genkei = 1)
 
-  print(head(text))
+  # print(head(text))
 
   ngram3_modifier <- dplyr::select(ngram3, N2, N3)
 
@@ -35,6 +35,7 @@ after_adjusting_text <- function(text) {
   newtext <- gsub('"', "", newtext, fixed = T)
   newtext <- gsub("#", "♯", newtext, fixed = T)
   newtext <- gsub("[.+?]", "", newtext, fixed = F)
+  newtext <- gsub("BOS", "", newtext, fixed = F)
   return(newtext)
 }
 
